@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import TodoCompo from './TodoCompo';
-import { nanoid } from 'nanoid';
 import './Todo.css'
 
 function TodoList() {
@@ -9,35 +8,67 @@ function TodoList() {
 
     const [add, setAdd] = useState([]);
 
+    // for pagination 
+    const [page, setPage] = useState(1);
+
+
     const handleQuery = (query) => {
 
         setQuery(query.target.value);
 
     }
 
+    useEffect(() => {
+
+
+        getData();
+
+    }, [page]);
+
+
+
+    async function getData() {
+        const data = await fetch(`http://localhost:8080/posts?_page=${page}&_limit=4`)
+            .then((e) => e.json());
+
+        setAdd(data)
+    }
+
     const addQuery = (query) => {
         const payload = {
             title: Query,
             status: false,
-            id: nanoid(5)
+            // id: nanoid(5)
         };
 
-        let newTask = [...add, payload];
-        setAdd(newTask);
+        // let newTask = [...add, payload];
+        // setAdd(newTask);
+
+        fetch(" http://localhost:8080/posts", {
+            method: 'POST',
+            headers: {
+                "content-type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        }).then(() => { getData() });
+
     }
 
+
+
+
     const handleStatus = (id) => {
+
         setAdd(
             add.map((e) => (e.id === id) ? { ...e, status: !e.status } : e)
         );
     }
 
     const remove = (id) => {
-        console.log(id);
+        fetch(`http://localhost:8080/posts/${id}`, {
+            method: 'DELETE',
 
-        setAdd(
-            add.filter((e) => e.id!==id)
-        );
+        }).then(() => { getData() });
     }
 
 
@@ -64,6 +95,18 @@ function TodoList() {
 
                     </tbody>
                 </table>
+                <button type="button" onClick={() => {
+                    if (page == 1) return
+                    setPage(page - 1)
+                }} className="btn btn-success">Prev</button>
+                <br />
+                <button type="button" onClick={() => {
+                    //    logic for button disable internally 
+                    if (add.length == 0) return
+                    setPage(page + 1)
+                }} className="btn btn-success">Next</button>
+
+
             </div>
         </>
     )
